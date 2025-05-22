@@ -30,6 +30,7 @@ En dansk version af det populære ordgættespil Contexto. Gæt det hemmelige ord
 ## 📁 Projektstruktur
 
 contexto-dk/
+
 ├── app/
 
 │   ├── Config/
