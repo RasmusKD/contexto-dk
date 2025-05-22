@@ -31,25 +31,45 @@ En dansk version af det populære ordgættespil Contexto. Gæt det hemmelige ord
 
 contexto-dk/
 ├── app/
+
 │   ├── Config/
+
 │   │   ├── words.php          # Daglige ord
+
 │   │   └── database.php       # Database konfiguration
+
 │   ├── Controllers/
+
 │   │   └── GameController.php # Spil logik
+
 │   ├── Core/
+
 │   │   ├── DailyWord.php      # Håndtering af daglige ord
+
 │   │   ├── Lemmatizer.php     # Dansk ordlemmatisering og ordvarianter
+
 │   │   └── Database.php       # Database forbindelse
+
 │   ├── Models/
+
 │   │   └── GameModel.php      # Data access layer - MongoDB queries
+
 │   └── Views/
+
 │       └── game.php           # Hovedspil interface
+
 ├── public/
+
 │   ├── index.php              # Entry point
+
 │   └── css/
+
 │       └── game.css           # Custom CSS styles og animationer
+
 ├── .gitignore
+
 ├── composer.json
+
 └── README.md
 
 ## 🎯 Spil Mekanik
