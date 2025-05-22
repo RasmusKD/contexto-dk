@@ -32,5 +32,4 @@ En dansk version af det populære ordgættespil Contexto. Gæt det hemmelige ord
 - **Backend**: PHP 8+ med custom MVC framework
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **Styling**: Tailwind CSS
-- **Database**: SQLite
-- **Dependencies**: Composer
+- **Database**: MongoDB
