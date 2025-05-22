@@ -1,0 +1,22 @@
+{
+    "name": "rasmus/contexto",
+    "description": "Danish similarity word game",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "authors": [
+        {
+            "name": "rasmus123d",
+            "email": "59487370+RasmusKD@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "mongodb/mongodb": "^1.16",
+      "ext-mongodb": "*",
+        "wamania/php-stemmer": "^4.0",
+      "ext-mbstring": "*"
+    }
+}
