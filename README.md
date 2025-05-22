@@ -1,4 +1,4 @@
-# Contexto DK 🇩🇰
+# Contexto DK
 
 En dansk version af det populære ordgættespil Contexto. Gæt det hemmelige ord ved hjælp af kontekstuelle hints baseret på ordenes semantiske lighed.
 
