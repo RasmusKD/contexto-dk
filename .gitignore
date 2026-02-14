@@ -27,3 +27,11 @@ Thumbs.db
 # Cache
 /cache/
 /tmp/
+
+# Large binary data files
+*.model.w2v.bin
+contexto-next/data/da/rankings.sqlite
+contexto-next/data/da/rankings/*.bin
+
+# Generated reports
+contexto-next/lighthouse-prod.json

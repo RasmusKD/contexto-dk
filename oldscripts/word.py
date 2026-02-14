@@ -1,0 +1,213 @@
+import csv
+import json
+import random
+import time
+
+GRID_SIZE = 5
+MAX_TIME = 110000000000000
+
+def read_words_3to5(file_path):
+    """ Læs ord på 3-5 bogstaver fra filen (tab-sep). """
+    import os
+    if not os.path.exists(file_path):
+        return []
+    words = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            row = line.strip().split("\t")
+            if not row:
+                continue
+            w = row[0].strip().lower()
+            if 3 <= len(w) <= 5 and w.isalpha():
+                words.append(w)
+    return list(set(words))
+
+def print_grid(grid):
+    for row in grid:
+        print("".join(cell if cell != " " else "." for cell in row))
+
+def save_to_json(grid, file_name="crossword.json"):
+    data = ["".join(cell if cell != " " else "." for cell in row) for row in grid]
+    with open(file_name, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def center_filled(grid):
+    """ Tjekker, om r=1..3, c=1..3 er fyldt (dvs. != ' '). """
+    for r in range(1,4):
+        for c in range(1,4):
+            if grid[r][c] == " ":
+                return False
+    return True
+
+def can_place_row(grid, word, row, start_col):
+    """
+    Tjekker om word (3-5 bogstaver) kan ligge i row, 
+    startende fra start_col, uden konflikt
+    og uden at overskride højre kant.
+    """
+    length = len(word)
+    if start_col + length > GRID_SIZE:
+        return False
+
+    # Tjek celler
+    for i in range(length):
+        cell = grid[row][start_col + i]
+        if cell != " " and cell != word[i]:
+            return False
+    return True
+
+def place_row(grid, word, row, start_col):
+    """ Lægger ordet i den pågældende row. """
+    for i, ch in enumerate(word):
+        grid[row][start_col + i] = ch
+
+def remove_row(grid, word, row, start_col):
+    """ Fjerner ordet fra row. """
+    for i in range(len(word)):
+        grid[row][start_col + i] = " "
+
+def can_place_col(grid, word, col, start_row):
+    """
+    Tjek om word (3-5 bogstaver) kan ligge i col,
+    startende fra start_row (lodret).
+    """
+    length = len(word)
+    if start_row + length > GRID_SIZE:
+        return False
+
+    for i in range(length):
+        cell = grid[start_row + i][col]
+        if cell != " " and cell != word[i]:
+            return False
+    return True
+
+def place_col(grid, word, col, start_row):
+    for i, ch in enumerate(word):
+        grid[start_row + i][col] = ch
+
+def remove_col(grid, word, col, start_row):
+    for i in range(len(word)):
+        grid[start_row + i][col] = " "
+
+def backtrack_rows(grid, words, row_idx, start_time):
+    """
+    Gå rekursivt igennem rækker 0..4.
+    For hver række vælger vi:
+      - at lade den være helt tom, ELLER
+      - at placere ét ord (3–5 bogstaver) et sted i rækken.
+
+    Returner True, hvis vi har været igennem alle rækker (row_idx==5).
+    """
+
+    if time.time() - start_time > MAX_TIME:
+        return False
+
+    if row_idx == GRID_SIZE:  # =5
+        return True
+
+    # Mulighed 1: row_idx er helt tom
+    # (dvs. 5 blanke felter)
+    # Men hvis der allerede er noget i den pga. kolonner (hvis man bytter rækkefølge), 
+    # så kan den ikke være "helt tom". Her antager vi, at vi først udfylder rækker 
+    # og senere kolonner, så ingen konflikt opstår endnu.
+    # Så vi giver blot lov til "tom" hvis row er tom i forvejen.
+    row_content = "".join(grid[row_idx][c] for c in range(GRID_SIZE))
+    if set(row_content) == {" "}:
+        # Rækken ER i forvejen tom
+        # => vi kan springe over denne række uden at lægge et ord
+        if backtrack_rows(grid, words, row_idx+1, start_time):
+            return True
+
+    # Mulighed 2: Vi prøver at placere et ord
+    random.shuffle(words)
+    for w in words:
+        length = len(w)
+        # prøv alle start_col, så ordet er inden for 5 kolonner
+        for start_col in range(GRID_SIZE - length + 1):
+            if can_place_row(grid, w, row_idx, start_col):
+                # placer ordet
+                place_row(grid, w, row_idx, start_col)
+                if backtrack_rows(grid, words, row_idx+1, start_time):
+                    return True
+                # fjern ordet igen
+                remove_row(grid, w, row_idx, start_col)
+
+    # Hvis intet virkede, return False
+    return False
+
+def backtrack_cols(grid, words, col_idx, start_time):
+    """
+    Efter at rækker er lagt, går vi kolonne for kolonne.
+    Samme princip: enten lader vi kolonnen stå tom,
+    eller lægger et ord i col_idx.
+    """
+    if time.time() - start_time > MAX_TIME:
+        return False
+
+    if col_idx == GRID_SIZE:  # 5
+        return True
+
+    # Tjek om kolonnen er allerede "optaget" (dvs. indeholder bogstaver).
+    col_content = [grid[r][col_idx] for r in range(GRID_SIZE)]
+    only_spaces = all(ch == " " for ch in col_content)
+    if only_spaces:
+        # Lad kolonnen være tom
+        if backtrack_cols(grid, words, col_idx+1, start_time):
+            return True
+
+    # Ellers: forsøg at placere et ord (hvis kolonnen er (delvist) tom)
+    random.shuffle(words)
+    for w in words:
+        length = len(w)
+        for start_row in range(GRID_SIZE - length + 1):
+            if can_place_col(grid, w, col_idx, start_row):
+                place_col(grid, w, col_idx, start_row)
+                if backtrack_cols(grid, words, col_idx+1, start_time):
+                    return True
+                remove_col(grid, w, col_idx, start_row)
+
+    return False
+
+
+def generate_5x5_no_partial_overlap(file_path):
+    """
+    1) Læser 3–5-bogstavsord
+    2) Udfylder rækker (0..4) med enten tomt eller 1 ord
+    3) Udfylder kolonner (0..4) med enten tomt eller 1 ord
+    4) Tjekker til sidst, om midten (r=1..3, c=1..3) er fyldt
+    """
+    words = read_words_3to5(file_path)
+    if not words:
+        print("Ingen ord på 3–5 bogstaver fundet.")
+        return None, False
+
+    grid = [[" " for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+    start_time = time.time()
+
+    # 1) Placer rækker
+    if not backtrack_rows(grid, words, 0, start_time):
+        return grid, False
+
+    # 2) Placer kolonner
+    if not backtrack_cols(grid, words, 0, start_time):
+        return grid, False
+
+    # 3) Tjek midten
+    if center_filled(grid):
+        return grid, True
+    else:
+        return grid, False
+
+
+if __name__ == "__main__":
+    grid, success = generate_5x5_no_partial_overlap("filtered_words.csv")
+    if success:
+        print("Vi har fundet en løsning, hvor hver række/kolonne er enten tom eller indeholder ét ord.\nMidten er fyldt.")
+    else:
+        print("Kunne ikke finde en løsning inden for tidsgrænsen, eller midten er ikke fyldt.")
+
+    print("\nResultat:")
+    print_grid(grid)
+
+    save_to_json(grid, "crossword.json")
+    print("\nGemte i crossword.json.")

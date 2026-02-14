@@ -1,0 +1,85 @@
+import csv
+import random
+import json
+
+# Læs ordlisten fra CSV-filen
+def read_wordlist(file_path):
+    words = []
+    with open(file_path, "r", encoding="utf-8") as file:
+        reader = csv.reader(file, delimiter="\t")
+        for row in reader:
+            if len(row) >= 2:  # Sørg for mindst to kolonner
+                word = row[0].strip()  # Bøjningsform
+                if 5 <= len(word) <= 7:  # Kun ord mellem 5 og 7 bogstaver
+                    words.append(word.lower())
+    return list(set(words))  # Fjern dubletter
+
+# Generér krydsordsgitter uden tomme felter i midten
+def generate_crossword(words, grid_size=5):
+    grid = [[" " for _ in range(grid_size)] for _ in range(grid_size)]
+    placed_words = []
+
+    def can_place_word(word, row, col, direction):
+        if direction == "across":
+            if col + len(word) > grid_size:
+                return False
+            return all(grid[row][col + i] in [" ", letter] for i, letter in enumerate(word))
+        elif direction == "down":
+            if row + len(word) > grid_size:
+                return False
+            return all(grid[row + i][col] in [" ", letter] for i, letter in enumerate(word))
+
+    def place_word(word, row, col, direction):
+        if direction == "across":
+            for i, letter in enumerate(word):
+                grid[row][col + i] = letter
+        elif direction == "down":
+            for i, letter in enumerate(word):
+                grid[row + i][col] = letter
+
+    # Placer ord
+    for word in words[:grid_size**2]:  # Begræns antallet af ord
+        placed = False
+        for _ in range(100):  # Maksimalt antal forsøg
+            direction = random.choice(["across", "down"])
+            row = random.randint(0, grid_size - 1)
+            col = random.randint(0, grid_size - 1)
+            if can_place_word(word, row, col, direction):
+                place_word(word, row, col, direction)
+                placed_words.append({"word": word, "position": (row, col), "direction": direction})
+                placed = True
+                break
+        if not placed:
+            print(f"Kunne ikke placere ordet: {word}")
+
+    return grid, placed_words
+
+# Gem krydsord som JSON
+def save_to_json(grid, words, file_path="crossword.json"):
+    crossword_data = {
+        "grid": grid,
+        "words": words
+    }
+    with open(file_path, "w", encoding="utf-8") as file:
+        json.dump(crossword_data, file, indent=4, ensure_ascii=False)
+
+# Udskriv grid i terminalen
+def print_grid(grid):
+    for row in grid:
+        print("".join(cell if cell != " " else ".", end=""))
+
+# Eksempel på kørsel
+if __name__ == "__main__":
+    # Læs ordlisten
+    word_list = read_wordlist("ddo_fullforms_2023-10-11.csv")
+    
+    # Generér krydsord
+    crossword_grid, crossword_words = generate_crossword(word_list, grid_size=7)
+    
+    # Vis krydsordet
+    print("\nKrydsord:")
+    print_grid(crossword_grid)
+    
+    # Gem som JSON
+    save_to_json(crossword_grid, crossword_words)
+    print("\nKrydsord gemt som crossword.json")
